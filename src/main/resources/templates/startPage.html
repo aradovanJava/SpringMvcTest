@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Start page</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+    <a th:href="@{/logout}">Logout</a><br />
+    Article search
+    <div sec:authorize="hasRole('USER')">Text visible to user.</div>
+    <div sec:authorize="hasRole('ADMIN')">Text visible to admin.</div>
+    <div sec:authorize="isAuthenticated()">
+        Text visible only to authenticated users.
+    </div>
+    Authenticated username:
+    <div sec:authentication="name"></div>
+    Authenticated user roles:
+    <div sec:authentication="principal.authorities"></div>
+
+    <form action="#" th:action="@{/start/articleSearch.html}" th:object="${searchArticleDTO}" method="post">
+        <p>
+            Article name: <input id="articleName" type="text" th:field="*{articleName}" />
+        </p>
+        <p>Article description: <input type="text" th:field="*{articleDescription}" /></p>
+        <p>Article price: From
+            <input type="number" th:field="*{lowerPrice}" /> to
+            <input type="number" th:field="*{upperPrice}" /></p>
+        <p>Category name:
+            <select th:field="*{categoryName}">
+                <option th:each="cat : ${categoryList}" th:value="${cat}" th:text="${cat.name}">
+                </option>
+            </select>
+        </p>
+        <p><input type="submit" value="Search" /> <input type="reset" value="Reset" /></p>
+    </form>
+
+    <div id="placeHolder">
+        Results
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th> Article name </th>
+            <th> Article description </th>
+            <th> Article price </th>
+            <th> Article category name </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${filteredArticles.empty}">
+            <td colspan="2"> No Articles Available </td>
+        </tr>
+        <tr th:each="articleDTO : ${filteredArticles}">
+            <td><span th:text="${articleDTO.articleName}"> Name </span></td>
+            <td><span th:text="${articleDTO.articleDescription}"> Description </span></td>
+            <td><span th:text="${articleDTO.articlePrice}"> Price </span></td>
+            <td><span th:text="${articleDTO.categoryName}"> Category </span></td>
+        </tr>
+        </tbody>
+    </table>
+
+</body>
+<script>
+    function textLength(value){
+        console.log('Calculating the text length!');
+        var maxLength = 3;
+        if(value.length >= maxLength) {
+            console.log('The length was too long!');
+            return false;
+        }
+        else {
+            console.log('The length is just fine.');
+            return true;
+        }
+    }
+
+    document.getElementById('articleName').onkeyup = function(){
+        console.log('Key pressed');
+        if(!textLength(this.value)) {
+            alert('text is too long!');
+            fetchingArticles(this.value);
+        }
+    }
+
+    function fetchingArticles(articleName) {
+        console.log('Fetching articles started...');
+        console.log('Article name' + articleName);
+        textPlaceHolder = document.getElementById('placeHolder');
+        $.ajax({
+                type: 'GET',
+                url: '/rest/article/name/' + articleName,
+                success: function(data){
+                        console.log('Parsing the data...');
+                        console.log('The data is: ' + JSON.stringify(data));
+                        textPlaceHolder.innerHTML = JSON.stringify(data);
+                }
+        })
+}
+</script>
+</html>
